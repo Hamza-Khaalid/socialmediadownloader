@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Social Media Video Downloader</title>
+    <style>
+        /* Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); padding: 20px; }
+        .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); width: 90%; max-width: 600px; margin-top: 20px; }
+        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="url"] { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        input[type="url"]:focus { border-color: #4ecdc4; }
+        button { padding: 12px 24px; background: #4ecdc4; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #45b7b0; }
+        .loading, .error, .success, .result { margin-top: 20px; display: none; text-align: center; }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>Social Media Video Downloader</h1>
+    
+    <div class="container">
+        <div class="input-group">
+            <input type="url" id="videoUrl" placeholder="Paste video URL here..." />
+            <button onclick="downloadVideo()">Download</button>
+        </div>
+        
+        <div class="loading">Processing your request...</div>
+        <div class="error"></div>
+        <div class="success">Download started! If it doesn't start automatically, click the link below.</div>
+        <div class="result"></div>
+    </div>
+
+    <script>
+        async function downloadVideo() {
+            const url = document.getElementById('videoUrl').value;
+            const loading = document.querySelector('.loading');
+            const error = document.querySelector('.error');
+            const success = document.querySelector('.success');
+            const result = document.querySelector('.result');
+
+            if (!url) {
+                error.style.display = 'block';
+                error.textContent = 'Please enter a valid URL';
+                return;
+            }
+
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            success.style.display = 'none';
+            result.style.display = 'none';
+
+            const apiUrl = 'https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink';
+            const options = {
+                method: 'POST',
+                headers: {
+                    'x-rapidapi-key': 'dfed8d0258msh05cc9ecf139a7ecp1ea5f4jsn1c3598af71f8', // Replace with your key
+                    'x-rapidapi-host': 'social-download-all-in-one.p.rapidapi.com',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            };
+
+            try {
+                const response = await fetch(apiUrl, options);
+                const data = await response.json();
+                console.log("API Response:", data); // Debugging log
+
+                // Check if there are media options available
+                if (data.medias && data.medias.length > 0) {
+                    const downloadUrl = data.medias[0].url; // Get the first media URL
+
+                    if (downloadUrl) {
+                        success.style.display = 'block';
+                        result.style.display = 'block';
+                        result.innerHTML = `
+                            <a href="${downloadUrl}" download>
+                                <button>Download Video</button>
+                            </a>
+                        `;
+                        
+                        // Auto download
+                        const link = document.createElement('a');
+                        link.href = downloadUrl;
+                        link.download = 'video.mp4';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } else {
+                        throw new Error('No download URL provided');
+                    }
+                } else {
+                    throw new Error('No media found in response');
+                }
+            } catch (err) {
+                error.style.display = 'block';
+                error.textContent = `Failed to download video: ${err.message}`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
